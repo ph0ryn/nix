@@ -146,7 +146,7 @@ std::optional<std::string> Input::getFingerprint(Store & store) const
     return fingerprint;
 }
 
-ParsedURL Input::toURL() const
+VerbatimURL Input::toURL() const
 {
     if (!scheme)
         throw Error("cannot show unsupported input '%s'", attrsToJSON(attrs));
@@ -156,8 +156,19 @@ ParsedURL Input::toURL() const
 std::string Input::toURLString(const StringMap & extraQuery) const
 {
     auto url = toURL();
-    for (auto & attr : extraQuery)
-        url.query.insert(attr);
+
+    if (!extraQuery.empty()) {
+        if (auto * parsedURL = std::get_if<ParsedURL>(&url.raw)) {
+            parsedURL->query.insert(extraQuery.begin(), extraQuery.end());
+        } else {
+            const auto existingQuery = url.parsed().query;
+
+            for (const auto & [key, value] : extraQuery)
+                if (!existingQuery.contains(key))
+                    url = url.with_query_param(key, value);
+        }
+    }
+
     return url.to_string();
 }
 
@@ -487,7 +498,7 @@ std::optional<time_t> Input::getLastModified() const
     return {};
 }
 
-ParsedURL InputScheme::toURL(const Input & input) const
+VerbatimURL InputScheme::toURL(const Input & input) const
 {
     throw Error("don't know how to convert input '%s' to a URL", attrsToJSON(input.attrs));
 }

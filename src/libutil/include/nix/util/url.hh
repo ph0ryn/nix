@@ -413,6 +413,8 @@ struct VerbatimURL
      */
     std::optional<std::string> lastPathSegment() const;
 
+    VerbatimURL with_query_param(std::string_view key, std::string_view value) const;
+
     VerbatimURL without_query_params(const StringSet & keys) const;
 };
 

@@ -152,7 +152,7 @@ struct GitArchiveInputScheme : InputScheme
         return input;
     }
 
-    ParsedURL toURL(const Input & input) const override
+    VerbatimURL toURL(const Input & input) const override
     {
         auto owner = getStrAttr(input.attrs, "owner");
         auto repo = getStrAttr(input.attrs, "repo");
@@ -173,7 +173,7 @@ struct GitArchiveInputScheme : InputScheme
         auto host = maybeGetStrAttr(input.attrs, "host");
         if (host)
             url.query.insert_or_assign("host", *host);
-        return url;
+        return VerbatimURL{std::move(url)};
     }
 
     Input applyOverrides(const Input & _input, std::optional<std::string> ref, std::optional<Hash> rev) const override

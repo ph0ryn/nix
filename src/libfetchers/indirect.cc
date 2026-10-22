@@ -102,7 +102,7 @@ struct IndirectInputScheme : InputScheme
         return input;
     }
 
-    ParsedURL toURL(const Input & input) const override
+    VerbatimURL toURL(const Input & input) const override
     {
         ParsedURL url{
             .scheme = "flake",
@@ -114,7 +114,7 @@ struct IndirectInputScheme : InputScheme
         if (auto rev = input.getRev()) {
             url.path.push_back(rev->gitRev());
         };
-        return url;
+        return VerbatimURL{std::move(url)};
     }
 
     Input applyOverrides(const Input & _input, std::optional<std::string> ref, std::optional<Hash> rev) const override

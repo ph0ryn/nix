@@ -423,31 +423,31 @@ struct GitInputScheme : InputScheme
         return input;
     }
 
-    ParsedURL toURL(const Input & input) const override
+    VerbatimURL toURL(const Input & input) const override
     {
-        auto url = parseURL(getStrAttr(input.attrs, "url"));
-        if (url.scheme != "git")
-            url.scheme = "git+" + url.scheme;
+        auto url = VerbatimURL{getStrAttr(input.attrs, "url")};
+        if (url.scheme() != "git")
+            url = VerbatimURL{"git+" + url.to_string()};
         if (auto rev = input.getRev())
-            url.query.insert_or_assign("rev", rev->gitRev());
+            url = url.with_query_param("rev", rev->gitRev());
         if (auto ref = input.getRef())
-            url.query.insert_or_assign("ref", *ref);
+            url = url.with_query_param("ref", *ref);
         if (getShallowAttr(input))
-            url.query.insert_or_assign("shallow", "1");
+            url = url.with_query_param("shallow", "1");
         if (getLfsAttr(input))
-            url.query.insert_or_assign("lfs", "1");
+            url = url.with_query_param("lfs", "1");
         if (getSubmodulesAttr(input))
-            url.query.insert_or_assign("submodules", "1");
+            url = url.with_query_param("submodules", "1");
         if (maybeGetBoolAttr(input.attrs, "exportIgnore").value_or(false))
-            url.query.insert_or_assign("exportIgnore", "1");
+            url = url.with_query_param("exportIgnore", "1");
         if (maybeGetBoolAttr(input.attrs, "verifyCommit").value_or(false))
-            url.query.insert_or_assign("verifyCommit", "1");
+            url = url.with_query_param("verifyCommit", "1");
         auto publicKeys = getPublicKeys(input.attrs);
         if (publicKeys.size() == 1) {
-            url.query.insert_or_assign("keytype", publicKeys.at(0).type);
-            url.query.insert_or_assign("publicKey", publicKeys.at(0).key);
+            url = url.with_query_param("keytype", publicKeys.at(0).type);
+            url = url.with_query_param("publicKey", publicKeys.at(0).key);
         } else if (publicKeys.size() > 1)
-            url.query.insert_or_assign("publicKeys", publicKeys_to_string(publicKeys));
+            url = url.with_query_param("publicKeys", publicKeys_to_string(publicKeys));
         return url;
     }
 

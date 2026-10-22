@@ -391,13 +391,14 @@ struct CurlInputScheme : InputScheme
         return input;
     }
 
-    ParsedURL toURL(const Input & input) const override
+    VerbatimURL toURL(const Input & input) const override
     {
-        auto url = parseURL(getStrAttr(input.attrs, "url"));
+        auto url = VerbatimURL{getStrAttr(input.attrs, "url")};
         // NAR hashes are preferred over file hashes since tar/zip
         // files don't have a canonical representation.
         if (auto narHash = input.getNarHash())
-            url.query.insert_or_assign("narHash", narHash->to_string(HashFormat::SRI, true));
+            url = url.with_query_param("narHash", narHash->to_string(HashFormat::SRI, true));
+
         return url;
     }
 

@@ -89,17 +89,17 @@ struct PathInputScheme : InputScheme
         return input;
     }
 
-    ParsedURL toURL(const Input & input) const override
+    VerbatimURL toURL(const Input & input) const override
     {
         auto query = attrsToQuery(input.attrs);
         query.erase("path");
         query.erase("type");
         query.erase("__final");
-        return ParsedURL{
+        return VerbatimURL{ParsedURL{
             .scheme = "path",
             .path = pathToUrlPath(std::filesystem::path{getStrAttr(input.attrs, "path")}),
             .query = query,
-        };
+        }};
     }
 
     std::optional<std::filesystem::path> getSourcePath(const Input & input) const override

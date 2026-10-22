@@ -710,6 +710,15 @@ ParsedURL fixGitURL(std::string url)
     return parsed;
 }
 
+VerbatimURL VerbatimURL::with_query_param(std::string_view key, std::string_view value) const
+{
+    boost::urls::url url{to_string()};
+
+    url.params(boost::urls::encoding_opts{}).set(key, value);
+
+    return VerbatimURL{std::string{url.buffer()}};
+}
+
 VerbatimURL VerbatimURL::without_query_params(const StringSet & keys) const
 {
     boost::urls::url url{to_string()};

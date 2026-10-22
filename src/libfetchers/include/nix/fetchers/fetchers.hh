@@ -61,7 +61,7 @@ public:
      */
     static Input fromAttrs(Attrs && attrs);
 
-    ParsedURL toURL() const;
+    VerbatimURL toURL() const;
 
     std::string toURLString(const StringMap & extraQuery = {}) const;
 
@@ -224,7 +224,7 @@ struct InputScheme
      */
     virtual const std::map<std::string, AttributeInfo> & allowedAttrs() const = 0;
 
-    virtual ParsedURL toURL(const Input & input) const;
+    virtual VerbatimURL toURL(const Input & input) const;
 
     virtual Input applyOverrides(const Input & input, std::optional<std::string> ref, std::optional<Hash> rev) const;
 

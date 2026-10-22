@@ -141,14 +141,13 @@ struct MercurialInputScheme : InputScheme
         return input;
     }
 
-    ParsedURL toURL(const Input & input) const override
+    VerbatimURL toURL(const Input & input) const override
     {
-        auto url = parseURL(getStrAttr(input.attrs, "url"));
-        url.scheme = "hg+" + url.scheme;
+        auto url = VerbatimURL{"hg+" + getStrAttr(input.attrs, "url")};
         if (auto rev = input.getRev())
-            url.query.insert_or_assign("rev", rev->gitRev());
+            url = url.with_query_param("rev", rev->gitRev());
         if (auto ref = input.getRef())
-            url.query.insert_or_assign("ref", *ref);
+            url = url.with_query_param("ref", *ref);
         return url;
     }
 
