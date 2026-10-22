@@ -9,28 +9,30 @@ namespace nix::fetchers {
 
 struct PathInputScheme : InputScheme
 {
-    std::optional<Input> inputFromURL(const ParsedURL & url, bool requireTree) const override
+    std::optional<Input> inputFromURL(const VerbatimURL & url, bool requireTree) const override
     {
-        if (url.scheme != "path")
+        auto parsedURL = url.parsed();
+
+        if (parsedURL.scheme != "path")
             return {};
 
-        if (url.authority && url.authority->host.size())
-            throw Error("path URL '%s' should not have an authority ('%s')", url, *url.authority);
+        if (parsedURL.authority && parsedURL.authority->host.size())
+            throw Error("path URL '%s' should not have an authority ('%s')", parsedURL, *parsedURL.authority);
 
         Input input{};
         input.attrs.insert_or_assign("type", "path");
-        input.attrs.insert_or_assign("path", urlPathToPath(url.path).string());
+        input.attrs.insert_or_assign("path", urlPathToPath(parsedURL.path).string());
 
-        for (auto & [name, value] : url.query)
+        for (auto & [name, value] : parsedURL.query)
             if (name == "rev" || name == "narHash")
                 input.attrs.insert_or_assign(name, value);
             else if (name == "revCount" || name == "lastModified") {
                 if (auto n = string2Int<uint64_t>(value))
                     input.attrs.insert_or_assign(name, *n);
                 else
-                    throw Error("path URL '%s' has invalid parameter '%s'", url, name);
+                    throw Error("path URL '%s' has invalid parameter '%s'", parsedURL, name);
             } else
-                throw Error("path URL '%s' has unsupported parameter '%s'", url, name);
+                throw Error("path URL '%s' has unsupported parameter '%s'", parsedURL, name);
 
         return input;
     }

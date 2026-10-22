@@ -47,19 +47,21 @@ static std::string runHg(OsStrings args)
 
 struct MercurialInputScheme : InputScheme
 {
-    std::optional<Input> inputFromURL(const ParsedURL & url, bool requireTree) const override
+    std::optional<Input> inputFromURL(const VerbatimURL & url, bool requireTree) const override
     {
-        if (url.scheme != "hg+http" && url.scheme != "hg+https" && url.scheme != "hg+ssh" && url.scheme != "hg+file")
+        auto parsedURL = url.parsed();
+
+        if (parsedURL.scheme != "hg+http" && parsedURL.scheme != "hg+https" && parsedURL.scheme != "hg+ssh" && parsedURL.scheme != "hg+file")
             return {};
 
-        auto url2(url);
+        auto url2(parsedURL);
         url2.scheme = std::string(url2.scheme, 3);
         url2.query.clear();
 
         Attrs attrs;
         attrs.emplace("type", "hg");
 
-        for (auto & [name, value] : url.query) {
+        for (auto & [name, value] : parsedURL.query) {
             if (name == "rev" || name == "ref")
                 attrs.emplace(name, value);
             else

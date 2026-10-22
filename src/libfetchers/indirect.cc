@@ -9,13 +9,15 @@ std::regex flakeRegex("[a-zA-Z][a-zA-Z0-9_-]*", std::regex::ECMAScript);
 
 struct IndirectInputScheme : InputScheme
 {
-    std::optional<Input> inputFromURL(const ParsedURL & url, bool requireTree) const override
+    std::optional<Input> inputFromURL(const VerbatimURL & url, bool requireTree) const override
     {
-        if (url.scheme != "flake")
+        auto parsedURL = url.parsed();
+
+        if (parsedURL.scheme != "flake")
             return {};
 
         /* This ignores empty path segments for back-compat. Older versions used a tokenizeString here. */
-        auto path = url.pathSegments(/*skipEmpty=*/true) | std::ranges::to<std::vector<std::string>>();
+        auto path = parsedURL.pathSegments(/*skipEmpty=*/true) | std::ranges::to<std::vector<std::string>>();
 
         std::optional<Hash> rev;
         std::optional<std::string> ref;

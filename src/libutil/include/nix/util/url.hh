@@ -412,6 +412,8 @@ struct VerbatimURL
      * @return The last non-empty path segment, or std::nullopt if no such segment exists.
      */
     std::optional<std::string> lastPathSegment() const;
+
+    VerbatimURL without_query_params(const StringSet & keys) const;
 };
 
 std::ostream & operator<<(std::ostream & os, const VerbatimURL & url);

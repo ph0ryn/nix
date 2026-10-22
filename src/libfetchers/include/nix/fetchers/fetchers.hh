@@ -52,7 +52,7 @@ public:
      */
     static Input fromURL(const std::string & url, bool requireTree = true);
 
-    static Input fromURL(const ParsedURL & url, bool requireTree = true);
+    static Input fromURL(const VerbatimURL & url, bool requireTree = true);
 
     /**
      * Create an `Input` from a an `Attrs`.
@@ -189,7 +189,7 @@ struct InputScheme
 {
     virtual ~InputScheme() {}
 
-    virtual std::optional<Input> inputFromURL(const ParsedURL & url, bool requireTree) const = 0;
+    virtual std::optional<Input> inputFromURL(const VerbatimURL & url, bool requireTree) const = 0;
 
     virtual std::optional<Input> inputFromAttrs(const Attrs & attrs) const = 0;
 

@@ -51,7 +51,7 @@ std::optional<ParsedURL> getLocalRepoURL(const std::filesystem::path & path)
 
 Input Input::fromURL(const std::string & url, bool requireTree)
 {
-    return fromURL(parseURL(url), requireTree);
+    return fromURL(VerbatimURL{url}, requireTree);
 }
 
 static void fixupInput(Input & input)
@@ -63,7 +63,7 @@ static void fixupInput(Input & input)
     input.getLastModified();
 }
 
-Input Input::fromURL(const ParsedURL & url, bool requireTree)
+Input Input::fromURL(const VerbatimURL & url, bool requireTree)
 {
     for (auto & [_, inputScheme] : inputSchemes()) {
         auto res = inputScheme->inputFromURL(url, requireTree);
@@ -76,7 +76,7 @@ Input Input::fromURL(const ParsedURL & url, bool requireTree)
     }
 
     // Provide a helpful hint when user tries file+git instead of git+file
-    auto parsedScheme = parseUrlScheme(url.scheme);
+    auto parsedScheme = parseUrlScheme(url.scheme());
     if (parsedScheme.application == "file" && parsedScheme.transport == "git") {
         throw Error("input '%s' is unsupported; did you mean 'git+file' instead of 'file+git'?", url);
     }

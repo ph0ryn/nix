@@ -31,13 +31,15 @@ struct GitArchiveInputScheme : InputScheme
     virtual std::optional<std::pair<std::string, std::string>>
     accessHeaderFromToken(const std::string & token) const = 0;
 
-    std::optional<Input> inputFromURL(const ParsedURL & url, bool requireTree) const override
+    std::optional<Input> inputFromURL(const VerbatimURL & url, bool requireTree) const override
     {
-        if (url.scheme != schemeName())
+        auto parsedURL = url.parsed();
+
+        if (parsedURL.scheme != schemeName())
             return {};
 
         /* This ignores empty path segments for back-compat. Older versions used a tokenizeString here. */
-        auto path = url.pathSegments(/*skipEmpty=*/true) | std::ranges::to<std::vector<std::string>>();
+        auto path = parsedURL.pathSegments(/*skipEmpty=*/true) | std::ranges::to<std::vector<std::string>>();
 
         Attrs attrs;
 
@@ -57,23 +59,23 @@ struct GitArchiveInputScheme : InputScheme
             }
             attrs.insert_or_assign("ref", rs);
         } else if (size < 2)
-            throw BadURL("URL '%s' is invalid", url);
+            throw BadURL("URL '%s' is invalid", parsedURL);
 
-        for (auto & [name, value] : url.query) {
+        for (auto & [name, value] : parsedURL.query) {
             if (name == "rev") {
                 if (attrs.contains(name))
-                    throw BadURL("URL '%s' contains multiple commit hashes", url);
+                    throw BadURL("URL '%s' contains multiple commit hashes", parsedURL);
                 attrs.insert_or_assign("rev", value);
             } else if (name == "ref") {
                 if (attrs.contains(name))
-                    throw BadURL("URL '%s' contains multiple branch/tag names", url);
+                    throw BadURL("URL '%s' contains multiple branch/tag names", parsedURL);
                 attrs.insert_or_assign("ref", value);
             } else if (name == "host")
                 attrs.insert_or_assign("host", value);
             else if (name == "narHash")
                 attrs.insert_or_assign("narHash", value);
             else
-                throw BadURL("URL '%s' contains unknown parameter '%s'", url, name);
+                throw BadURL("URL '%s' contains unknown parameter '%s'", parsedURL, name);
         }
 
         attrs.insert_or_assign("type", std::string{schemeName()});

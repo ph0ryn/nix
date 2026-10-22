@@ -710,6 +710,16 @@ ParsedURL fixGitURL(std::string url)
     return parsed;
 }
 
+VerbatimURL VerbatimURL::without_query_params(const StringSet & keys) const
+{
+    boost::urls::url url{to_string()};
+
+    for (const auto & key : keys)
+        url.params().erase(key);
+
+    return VerbatimURL{std::string{url.buffer()}};
+}
+
 // https://www.rfc-editor.org/rfc/rfc3986#section-3.1
 bool isValidSchemeName(std::string_view s)
 {

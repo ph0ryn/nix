@@ -176,18 +176,20 @@ static LazyAttr makeLazyAttr(fun<ResolvedAttr()> compute)
 
 struct GitInputScheme : InputScheme
 {
-    std::optional<Input> inputFromURL(const ParsedURL & url, bool requireTree) const override
+    std::optional<Input> inputFromURL(const VerbatimURL & url, bool requireTree) const override
     {
-        if (url.scheme != "git" && parseUrlScheme(url.scheme).application != "git")
+        auto parsedURL = url.parsed();
+
+        if (parsedURL.scheme != "git" && parseUrlScheme(parsedURL.scheme).application != "git")
             return {};
 
-        auto url2(url);
+        auto url2(parsedURL);
         url2.query.clear();
 
         Attrs attrs;
         attrs.emplace("type", "git");
 
-        for (auto & [name, value] : url.query) {
+        for (auto & [name, value] : parsedURL.query) {
             if (name == "rev" || name == "ref" || name == "keytype" || name == "publicKey" || name == "publicKeys")
                 attrs.emplace(name, value);
             else if (

@@ -10,6 +10,7 @@
 #include "nix/fetchers/git-utils.hh"
 #include "nix/fetchers/merkle-tar-adapter.hh"
 #include "nix/fetchers/fetch-settings.hh"
+#include <boost/url.hpp>
 
 namespace nix::fetchers {
 
@@ -257,42 +258,48 @@ struct CurlInputScheme : InputScheme
 
     static const StringSet specialParams;
 
-    std::optional<Input> inputFromURL(const ParsedURL & _url, bool requireTree) const override
+    std::optional<Input> inputFromURL(const VerbatimURL & url, bool requireTree) const override
     {
-        if (!isValidURL(_url, requireTree))
+        auto parsedURL = url.parsed();
+
+        if (!isValidURL(parsedURL, requireTree))
             return std::nullopt;
 
         Input input{};
 
-        auto url = _url;
-
-        url.scheme = parseUrlScheme(url.scheme).transport;
-
-        auto narHash = url.query.find("narHash");
-        if (narHash != url.query.end())
+        auto narHash = parsedURL.query.find("narHash");
+        if (narHash != parsedURL.query.end())
             input.attrs.insert_or_assign("narHash", narHash->second);
 
-        if (auto i = get(url.query, "rev"))
+        if (auto i = get(parsedURL.query, "rev"))
             input.attrs.insert_or_assign("rev", *i);
 
-        if (auto i = get(url.query, "revCount"))
+        if (auto i = get(parsedURL.query, "revCount"))
             if (auto n = string2Int<uint64_t>(*i))
                 input.attrs.insert_or_assign("revCount", *n);
 
-        if (auto i = get(url.query, "lastModified"))
+        if (auto i = get(parsedURL.query, "lastModified"))
             if (auto n = string2Int<uint64_t>(*i))
                 input.attrs.insert_or_assign("lastModified", *n);
+
+        input.attrs.insert_or_assign("type", std::string{schemeName()});
 
         /* The URL query parameters serve two roles: specifying fetch
            settings for Nix itself, and arbitrary data as part of the
            HTTP request. Now that we've processed the Nix-specific
            attributes above, remove them so we don't also send them as
            part of the HTTP request. */
-        for (auto & [param, _] : allowedAttrs())
-            url.query.erase(param);
+        auto params = allowedAttrs()
+            | std::views::keys
+            | std::ranges::to<StringSet>();
+        auto fetchURL = url.without_query_params(params);
 
-        input.attrs.insert_or_assign("type", std::string{schemeName()});
-        input.attrs.insert_or_assign("url", url.to_string());
+        auto transportScheme = parseUrlScheme(url.scheme()).transport;
+        auto transportURL = fetchURL.to_string();
+        transportURL.replace(0, url.scheme().size(), transportScheme);
+
+        input.attrs.insert_or_assign("url", transportURL);
+
         return input;
     }
 
