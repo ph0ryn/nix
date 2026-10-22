@@ -51,7 +51,7 @@ TEST_P(InputFromAttrsTest, attrsAreCorrectAndRoundTrips)
     // equivalent representations. At least the idempotency holds (next assertions).
     EXPECT_EQ(inputFromUrl.toAttrs(), input.toAttrs());
 #endif
-    EXPECT_EQ(inputFromUrl.toURL(), url);
+    EXPECT_EQ(inputFromUrl.toURL().to_string(), url.to_string());
     EXPECT_EQ(fetchers::Input::fromAttrs(inputFromUrl.toAttrs()).toAttrs(), inputFromUrl.toAttrs());
 
     enableFlakesMaybe.reset();
@@ -155,7 +155,7 @@ INSTANTIATE_TEST_SUITE_P(
                     {"rev", Attr("sha1:89144hj289144hj289144hj289144hj2")},
                 },
             // Query parameters are merged and fragments are accepted too?
-            .expectedUrl = "git+http://somewhere?rev=4242424242424242424242424242424242424242&something=abcd#a",
+            .expectedUrl = "git+http://somewhere?something=abcd&rev=4242424242424242424242424242424242424242#a",
             .description = "git_rev_in_nix32_explicit_sha1",
             .expectedAttrs =
                 {
@@ -174,7 +174,7 @@ INSTANTIATE_TEST_SUITE_P(
                 },
             /// XXX: Is it ok that the query parameter loses pct-encoding there? Seems very sketchy.
             .expectedUrl =
-                "git+proprietaryhelper:///something///else///?hello=goodbye&rev=4242424242424242424242424242424242424242&test=/?",
+                "git+proprietaryhelper:///something///else///?hello=goodbye&test=/?&rev=4242424242424242424242424242424242424242",
             .description = "git_rev_in_base64_explicit_sha1",
             .expectedAttrs =
                 {
@@ -217,6 +217,23 @@ TEST_F(GitHubInputTest, throwOnInvalidURLParam)
     EXPECT_THAT(
         []() { Input::fromURL("github:a/b?tag=foo"); },
         ::testing::ThrowsMessage<BadURL>(testing::HasSubstrIgnoreANSIMatcher("tag")));
+}
+
+TEST(Input, extraQueryPreservesParsedURLOrdering)
+{
+    EnableExperimentalFeature enableFlakes("flakes");
+    auto input = Input::fromURL(std::string{"github:owner/repo?host=example.test"});
+
+    EXPECT_EQ(input.toURLString({{"dir", "src"}, {"host", "other"}}), "github:owner/repo?dir=src&host=example.test");
+}
+
+TEST(TarballInput, extraQueryPreservesVerbatimURL)
+{
+    const std::string url = "https://example.test/a.tar.gz?z=1&token=a%2fb%2Fc+z&token=second";
+    auto input = Input::fromAttrs({{"type", Attr("tarball")}, {"url", Attr(url)}});
+
+    EXPECT_EQ(input.toURLString(), url);
+    EXPECT_EQ(input.toURLString({{"dir", "src"}, {"token", "other"}}), url + "&dir=src");
 }
 
 TEST(TarballInput, preservesEncodedQueryWhileExtractingAttributes)
