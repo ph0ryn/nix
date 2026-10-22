@@ -219,6 +219,17 @@ TEST_F(GitHubInputTest, throwOnInvalidURLParam)
         ::testing::ThrowsMessage<BadURL>(testing::HasSubstrIgnoreANSIMatcher("tag")));
 }
 
+TEST(TarballInput, preservesEncodedQueryWhileExtractingAttributes)
+{
+    auto inputFromUrl = fetchers::Input::fromURL(std::string{"tarball+https://example.test/a.tar.gz?lastModified=123&token=a%2fb%2Fc"});
+
+    auto attrs = inputFromUrl.toAttrs();
+
+    EXPECT_EQ(fetchers::getStrAttr(attrs, "type"), "tarball");
+    EXPECT_EQ(fetchers::getStrAttr(attrs, "url"), "https://example.test/a.tar.gz?token=a%2fb%2Fc");
+    EXPECT_EQ(fetchers::getIntAttr(attrs, "lastModified"), 123);
+}
+
 } // namespace fetchers
 
 } // namespace nix
